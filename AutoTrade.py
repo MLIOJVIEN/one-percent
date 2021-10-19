@@ -24,9 +24,12 @@ def check_bal():
     return avg, balance
 
 # 초기 구매
-upbit.buy_market_order("KRW-DOGE", 80000)
+upbit.buy_market_order("KRW-DOGE", 500000)
 avg = 0
 balance = 0
+trade_price = pyupbit.get_current_price("KRW-DOGE")
+target_d_price = trade_price*0.99
+target_u_price = trade_price*1.01
 avg, balance = check_bal()
 
 # Auto Trade
@@ -37,24 +40,30 @@ while True:
         end_time = start_time + datetime.timedelta(days=1)
 
         if start_time < now < end_time - datetime.timedelta(seconds=10):
-            target_d_price = avg*0.99
-            target_u_price = avg*1.01
             current_price = pyupbit.get_current_price("KRW-DOGE")
             if target_d_price > current_price:
                 print("danger")
-                krw = get_balance("KRW")
+                krw = upbit.get_balance("KRW")
                 if krw > 10000:
                     a_m = current_price*balance
-                    b_m = 100000 - a_m
-                    if b_m > 1000:
+                    b_m = 500000 - a_m
+                    if b_m > 5000:
                         upbit.buy_market_order("KRW-DOGE", b_m)
                         avg, balance = check_bal()
+                        target_d_price = current_price*0.99
+                        target_u_price = current_price*1.01
                         print("buy")
-            if target_u_price < current_price:
+            elif target_u_price < current_price:
                 print("chance")
-                upbit.sell_market_order("KRW-DOGE", balance*0.01)
-                avg, balance = check_bal()
-                print("sell")
+                a_m = current_price*balance
+                b_m = a_m - 500000
+                stock = b_m/current_price
+                if stock*current_price > 5000:
+                    upbit.sell_market_order("KRW-DOGE", stock)
+                    avg, balance = check_bal()
+                    target_d_price = current_price*0.99
+                    target_u_price = current_price*1.01
+                    print("sell")
         else:
             time.sleep(1)
     except Exception as e:
